@@ -1,15 +1,16 @@
 #获取表达矩阵中的ERCC信息 , grep1返回逻辑值
-is.spike <- grepl("^ERCC", rownames(sce))
+#spike-in是已知浓度的外源RNA，在单细胞裂解后加入再进行反转录，可以更好地估计和消除系统误差
+is.spike <- grepl("^ERCC", rownames(sce))#检查基因名称中是否包含ERCC
 #summary(is.spike)
-sce <- splitAltExps(sce, ifelse(is.spike, "ERCC","gene"))
+sce <- splitAltExps(sce, ifelse(is.spike, "ERCC","gene"))#将spike-in分离出来
 
 #删除掉SIRV信息
 is.sirv <- grepl("^SIRV", rownames(sce))
 sce <- sce[!is.sirv,]
 summary(is.sirv)
 
-#读取细胞注释信息，并将其添加到colData中
-metadata <- read.delim(file.path('C:/Users/26068/Desktop/github/cellmatrix',
+#读取细胞注释信息metadata，并将其添加到colData中
+metadata <- read.delim(file.path('C:/Users/26068/Desktop/github/singlecellanalysis',
                                  "E-MTAB-5522.sdrf.txt"),
                        check.names = FALSE, header = TRUE)
 #match的作用是返回前一个参数在后一个参数的位置
@@ -23,8 +24,8 @@ head(colnames(metadata))
 colData(sce)$Plate <- factor(metadata[["Factor Value[block]"]])
 #2、细胞表型
 pheno <- metadata[["Factor Value[phenotype]"]]
-levels(pheno) <- c("induced", "control")
 colData(sce)$Oncogene <- pheno
+levels(colData(sce)$Oncogene) <-c("induced", "control")
 
 table(colData(sce)$Oncogene, colData(sce)$Plate)
 
@@ -53,5 +54,3 @@ location <-mapIds(TxDb.Mmusculus.UCSC.mm10.ensGene,
                              keytype = "GENEID")
 rowData(sce)$CHR <-location
 summary(location=="chrM")
-
-obj<-data.frame(gene_id = rownames(sce), gene_length=rowData(sce)$GeneLength)
